@@ -7,7 +7,7 @@ import java.util.stream.Stream;
 
 public class Database {
     private Connection connection;
-    private int insertedCount = 0;
+    public static final int BATCH_SIZE = 10000;
 
     public Database(File databaseFile) {
         String databasePath = databaseFile.getPath();
@@ -39,31 +39,37 @@ public class Database {
     public void insertContacts(Stream<Contact> contacts) {
 
         System.out.println("Inserting contacts ...");
+        String query = "INSERT INTO contacts (name, email) VALUES (?,?)";
+
+        int batchCount = 0;
+        int insertedCount = 0;
+
         try{
-            String query = "INSERT INTO contacts(name, email) VALUES(?,?)";
             PreparedStatement ps = connection.prepareStatement(query);
-
-            Consumer<Contact> consumer = (contact) -> {
-                try {
-                    ps.setString(1, contact.name());
-                    ps.setString(2, contact.email());
-                    ps.addBatch();
-                } catch (SQLException e) {
-                    throw new RuntimeException("Not insert into db: " + e.toString());
+            connection.setAutoCommit(false);
+        
+            for (Contact contact: (Iterable<Contact>) contacts::iterator) {
+                ps.setString(1, contact.name());
+                ps.setString(2, contact.email());
+                ps.addBatch();
+                insertedCount++;
+                if (insertedCount % BATCH_SIZE == 0) {
+                    batchCount++;
+                    ps.executeBatch();
+                    connection.commit();
+                    ps.clearBatch();
+                    System.out.println("Inserted " + insertedCount + " contacts in batch " + batchCount);
                 }
-            };
+            }
 
-            contacts.forEach(consumer);
+            // Ensure that the last batch is executed
             ps.executeBatch();
             connection.commit();
-
+            ps.clearBatch();
         } catch (SQLException e) {
             throw new RuntimeException("Not insert into db: " + e.toString());
         }
-
         System.out.println("Done inserting contacts");
-
-
     }
 
     public String getContactNameFromEmail(String email) {
