@@ -42,7 +42,6 @@ public class App {
     private void insertContacts(int count) {
         Stream<Contact> contacts = contactsGenerator.generateContacts(count);
         database.insertContacts(contacts);
-        throw new RuntimeException("Not implemented");
 
     }
 
