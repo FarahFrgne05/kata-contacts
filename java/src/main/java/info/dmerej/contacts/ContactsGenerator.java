@@ -10,9 +10,9 @@ public class ContactsGenerator {
 
     Contact[] contacts = new Contact[count];
 
-    for(int i = 0; i<=count; i++){
-      String name = "Alice"+i;
-      String email = "email-"+i+"@tld";
+    for(int i = 0; i<count; i++){
+      String name = "Alice"+(i+1);
+      String email = "email-"+(i+1)+"@tld";
       Contact contact = new Contact(name, email);
       contacts[i] = contact;
     }
