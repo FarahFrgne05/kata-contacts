@@ -2,6 +2,7 @@ package info.dmerej.contacts;
 
 import java.io.File;
 import java.sql.*;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 public class Database {
@@ -36,7 +37,33 @@ public class Database {
     }
 
     public void insertContacts(Stream<Contact> contacts) {
-        // TODO
+
+        System.out.println("Inserting contacts ...");
+        try{
+            String query = "INSERT INTO contacts(name, email) VALUES(?,?)";
+            PreparedStatement ps = connection.prepareStatement(query);
+
+            Consumer<Contact> consumer = (contact) -> {
+                try {
+                    ps.setString(1, contact.name());
+                    ps.setString(2, contact.email());
+                    ps.addBatch();
+                } catch (SQLException e) {
+                    throw new RuntimeException("Not insert into db: " + e.toString());
+                }
+            };
+
+            contacts.forEach(consumer);
+            ps.executeBatch();
+            connection.commit();
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Not insert into db: " + e.toString());
+        }
+
+        System.out.println("Done inserting contacts");
+
+
     }
 
     public String getContactNameFromEmail(String email) {
